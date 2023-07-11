@@ -1,60 +1,65 @@
-import { useState, useContext } from "react";
+import { useContext, useState } from "react";
 import {
   createUserDocumenFromAuth,
-  createUserWithEmailAndPasswords,
+  signInWithGooglePopup,
+  signInUserWithEmailAndPassword,
+  auth,
 } from "../../utils/firebase/firebase.utils";
 import FormInput from "../form-input/form-input.component";
 import Button from "../button/button.component";
-import "./sign-up-form.styles.scss";
 import { UserContext } from "../context/user.context";
+import "./sign-in-form.styles.scss";
 
 const defaultFormFields = {
-  displayName: "",
   email: "",
   password: "",
-  confirmPassword: "",
 };
-const SignUpForm = () => {
+const SignInForm = () => {
   const [FormFields, setFormFields] = useState(defaultFormFields);
   const { setCurrentUser } = useContext(UserContext);
-  const { displayName, email, password, confirmPassword } = FormFields;
+  const { email, password } = FormFields;
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormFields({ ...FormFields, [name]: value });
-    console.log(FormFields);
   };
   const resetFields = () => {
     setFormFields(defaultFormFields);
   };
+
+  const singInWithGoogle = async () => {
+    try {
+      const { user } = await signInWithGooglePopup();
+      await createUserDocumenFromAuth(user);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (password !== confirmPassword) {
-      alert("Passwornd doesnt match");
-      return;
-    }
+
     try {
-      const { user } = await createUserWithEmailAndPasswords(email, password);
+      const { user } = await signInUserWithEmailAndPassword(email, password);
       setCurrentUser(user);
-      await createUserDocumenFromAuth(user, { displayName });
       resetFields();
     } catch (error) {
-      console.log("user creation encounteret an error", error);
+      console.log(error);
+      switch (error.code) {
+        case "auth/wrong-password":
+          alert("Wrong password");
+        case "auth/user-not-found":
+          alert("No user associated with this email.");
+          break;
+        default:
+          console.log(error);
+      }
     }
   };
   return (
     <div className="sign-up-container">
-      <h2>Don't have an account?</h2>
+      <h2>Alredy have an account?</h2>
       <span>Sign up with you email and password</span>
       <form onSubmit={handleSubmit}>
-        <FormInput
-          label="Display name"
-          type="text"
-          placeholder=" "
-          required
-          onChange={handleChange}
-          name="displayName"
-          value={displayName}
-        />
         <FormInput
           label="Email"
           type="email"
@@ -73,20 +78,15 @@ const SignUpForm = () => {
           name="password"
           value={password}
         />
-        <FormInput
-          label="Confirma Password"
-          type="password"
-          placeholder=" "
-          required
-          onChange={handleChange}
-          name="confirmPassword"
-          value={confirmPassword}
-        />
-
-        <Button type="submit">Sign up</Button>
+        <div className="buttons-container">
+          <Button type="submit">Sign up</Button>
+          <Button type="button" buttonType="google" onClick={singInWithGoogle}>
+            Google Sign In
+          </Button>
+        </div>
       </form>
     </div>
   );
 };
 
-export default SignUpForm;
+export default SignInForm;
