@@ -5,10 +5,9 @@ import { ReactComponent as Logo } from "../../assets/images/crown.svg";
 import { UserContext } from "../../components/context/user.context";
 import { signOutUser } from "../../utils/firebase/firebase.utils";
 const Navigation = () => {
-  const { currentUser, setCurrentUser } = useContext(UserContext);
+  const { currentUser } = useContext(UserContext);
   const signOutHandler = async () => {
     const response = await signOutUser();
-    setCurrentUser(null);
     console.log(response);
   };
 
